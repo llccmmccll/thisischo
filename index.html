@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ThisisCho | Esports Team Manager & Data Strategist</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@300;400;500;700&family=Oswald:wght@400;500;700&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <style>
+        :root { --bg-dark: #0a0a0a; --bg-surface: #111827; --text-main: #f3f4f6; --text-muted: #9ca3af; --neon-blue: #00f0ff; --neon-blue-glow: rgba(0, 240, 255, 0.5); --esports-red: #ff003c; --font-heading: 'Oswald', sans-serif; --font-body: 'Noto Sans SC', sans-serif; --transition: all 0.3s ease; --section-padding: 100px 5%; }
+        * { margin: 0; padding: 0; box-sizing: border-box; scroll-behavior: smooth; }
+        body { background-color: var(--bg-dark); color: var(--text-main); font-family: var(--font-body); line-height: 1.8; overflow-x: hidden; }
+        a { text-decoration: none; color: inherit; } ul { list-style: none; } .container { max-width: 1200px; margin: 0 auto; }
+        .section-title { font-family: var(--font-heading); font-size: 2.5rem; text-transform: uppercase; letter-spacing: 2px; margin-bottom: 50px; position: relative; display: inline-block; }
+        .section-title::after { content: ''; position: absolute; bottom: -10px; left: 0; width: 60px; height: 4px; background: var(--esports-red); }
+        .navbar { position: fixed; top: 0; width: 100%; display: flex; justify-content: space-between; align-items: center; padding: 15px 5%; background: rgba(10, 10, 10, 0.9); backdrop-filter: blur(10px); z-index: 1000; border-bottom: 1px solid rgba(255, 255, 255, 0.05); }
+        .logo { font-family: var(--font-heading); font-size: 1.6rem; font-weight: 700; letter-spacing: 2px; } .logo span { color: var(--neon-blue); }
+        .nav-center { display: flex; align-items: center; gap: 40px; } .nav-links { display: flex; gap: 30px; } .nav-links li a { font-family: var(--font-heading); text-transform: uppercase; font-weight: 500; font-size: 1rem; letter-spacing: 1px; transition: var(--transition); } .nav-links li a:hover { color: var(--neon-blue); text-shadow: 0 0 8px var(--neon-blue-glow); }
+        .nav-actions { display: flex; align-items: center; gap: 20px; } .lang-switcher { position: relative; display: inline-block; }
+        .lang-btn { background: transparent; color: var(--text-main); border: 1px solid rgba(255,255,255,0.2); padding: 6px 12px; font-family: var(--font-body); font-size: 0.9rem; cursor: pointer; display: flex; align-items: center; gap: 5px; transition: var(--transition); }
+        .lang-btn:hover { border-color: var(--neon-blue); color: var(--neon-blue); }
+        .lang-dropdown { display: none; position: absolute; right: 0; top: 100%; margin-top: 10px; background: var(--bg-surface); border: 1px solid rgba(255,255,255,0.1); min-width: 120px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); z-index: 1001; }
+        .lang-dropdown::before { content: ''; position: absolute; top: -15px; left: 0; width: 100%; height: 15px; background: transparent; }
+        .lang-switcher:hover .lang-dropdown { display: block; animation: fadeIn 0.2s ease; } .lang-dropdown a { display: block; padding: 10px 15px; font-size: 0.85rem; color: var(--text-muted); transition: var(--transition); } .lang-dropdown a:hover { background: rgba(0, 240, 255, 0.1); color: var(--neon-blue); }
+        .btn-pdf { background: transparent; color: var(--text-main); border: 1px solid var(--esports-red); padding: 8px 20px; font-family: var(--font-heading); text-transform: uppercase; font-weight: 600; letter-spacing: 1px; cursor: pointer; transition: var(--transition); display: inline-flex; align-items: center; gap: 8px; } .btn-pdf:hover { background: var(--esports-red); box-shadow: 0 0 15px rgba(255, 0, 60, 0.4); }
+        .btn-pdf.loading { opacity: 0.6; cursor: not-allowed; pointer-events: none; }
+        #pdf-progress { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 3px; background: var(--esports-red); z-index: 9999; animation: progressBar 3s ease-in-out; }
+        @keyframes progressBar { from { width: 0%; } to { width: 100%; } }
+        .hero { height: 100vh; display: flex; align-items: center; justify-content: center; position: relative; background: radial-gradient(circle at center, #1a2333 0%, var(--bg-dark) 70%); padding: 0 5%; } .hero::before { content: ''; position: absolute; top: 0; left: 0; right: 0; bottom: 0; background-image: linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px); background-size: 40px 40px; pointer-events: none; z-index: 1; }
+        .hero-content { position: relative; z-index: 2; text-align: center; max-width: 900px; animation: fadeIn 1.5s ease forwards; } .hero-aka { font-family: var(--font-heading); color: var(--text-muted); text-transform: uppercase; letter-spacing: 6px; font-size: 1.1rem; margin-bottom: 5px; opacity: 0.8; } .hero-title { font-family: var(--font-heading); font-size: 5rem; font-weight: 700; line-height: 1; margin-bottom: 30px; letter-spacing: 3px; text-transform: uppercase; } .hero-title span { color: var(--neon-blue); text-shadow: 0 0 20px var(--neon-blue-glow); } .hero-subtitle { font-family: var(--font-heading); color: var(--text-main); text-transform: uppercase; letter-spacing: 3px; font-size: 1.4rem; margin-bottom: 40px; font-weight: 500; } .hero-quote { text-align: left; display: inline-block; margin-bottom: 50px; background: rgba(17, 24, 39, 0.6); padding: 20px 30px; border-left: 3px solid var(--esports-red); border-radius: 4px; } .hero-quote p { font-size: 1.1rem; font-style: italic; color: var(--text-main); line-height: 1.8; }
+        .hero-cta { display: flex; gap: 25px; justify-content: center; } .btn-primary, .btn-secondary { padding: 15px 35px; font-family: var(--font-heading); text-transform: uppercase; font-weight: 600; letter-spacing: 2px; transition: var(--transition); border: none; cursor: pointer; font-size: 1rem; } .btn-primary { background: var(--neon-blue); color: var(--bg-dark); box-shadow: 0 0 15px var(--neon-blue-glow); } .btn-primary:hover { background: #fff; box-shadow: 0 0 25px var(--neon-blue-glow); } .btn-secondary { background: transparent; color: var(--text-main); border: 1px solid var(--text-muted); } .btn-secondary:hover { border-color: var(--neon-blue); color: var(--neon-blue); box-shadow: 0 0 10px rgba(0, 240, 255, 0.2); }
+        /* About */
+        .about { padding: var(--section-padding); background-color: var(--bg-surface); } .about-wrapper { display: grid; grid-template-columns: 2fr 1fr; gap: 60px; align-items: start; } .about-text p { color: var(--text-muted); margin-bottom: 25px; font-size: 1.05rem; } .about-text p strong { color: var(--neon-blue); font-weight: 500; } .about-snapshot { background: rgba(10, 10, 10, 0.5); padding: 30px; border: 1px solid rgba(255, 255, 255, 0.05); position: relative; border-radius: 4px; } .about-snapshot::before { content: ''; position: absolute; top: -1px; left: -1px; width: 30px; height: 30px; border-top: 2px solid var(--neon-blue); border-left: 2px solid var(--neon-blue); } .snapshot-title { font-family: var(--font-heading); font-size: 1.3rem; margin-bottom: 25px; text-transform: uppercase; } .snapshot-list li { margin-bottom: 18px; display: flex; flex-direction: column; border-bottom: 1px solid rgba(255,255,255,0.04); padding-bottom: 14px; } .snapshot-list li:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; } .snapshot-label { font-size: 0.8rem; color: var(--esports-red); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 4px; } .snapshot-value { font-size: 0.95rem; color: var(--text-main); font-weight: 500; line-height: 1.6; }
+        /* Skills */
+        .skills { padding: var(--section-padding); background-color: var(--bg-dark); } .skills-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 30px; } .skill-card { background: var(--bg-surface); padding: 40px 30px; border: 1px solid rgba(255, 255, 255, 0.05); border-radius: 8px; transition: var(--transition); position: relative; overflow: hidden; } .skill-card:hover { border-color: var(--neon-blue); transform: translateY(-5px); box-shadow: 0 10px 30px rgba(0, 240, 255, 0.05); } .skill-card::after { content: ''; position: absolute; bottom: 0; right: 0; width: 0; height: 0; border-bottom: 20px solid var(--esports-red); border-left: 20px solid transparent; opacity: 0; transition: var(--transition); } .skill-card:hover::after { opacity: 1; } .skill-icon { font-size: 2rem; color: var(--neon-blue); margin-bottom: 20px; display: inline-block; } .skill-title { font-family: var(--font-heading); font-size: 1.3rem; color: var(--text-main); margin-bottom: 15px; letter-spacing: 1px; } .skill-desc { color: var(--text-muted); font-size: 0.92rem; line-height: 1.75; }
+        /* Experience */
+        .experience { padding: var(--section-padding); background-color: var(--bg-surface); } .timeline { position: relative; max-width: 1000px; margin: 40px auto 0; padding-left: 40px; } .timeline::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 2px; background: rgba(0, 240, 255, 0.2); } .timeline-item { position: relative; margin-bottom: 70px; } .timeline-item:last-child { margin-bottom: 0; } .timeline-dot { position: absolute; left: -48px; top: 5px; width: 18px; height: 18px; border-radius: 50%; background: var(--esports-red); border: 4px solid var(--bg-surface); box-shadow: 0 0 10px rgba(255, 0, 60, 0.5); } .timeline-date { font-family: var(--font-heading); color: var(--neon-blue); font-size: 1.1rem; letter-spacing: 2px; margin-bottom: 5px; display: block; } .timeline-title { font-family: var(--font-heading); font-size: 1.6rem; color: var(--text-main); margin-bottom: 5px; } .timeline-company { font-size: 1rem; color: var(--text-muted); margin-bottom: 20px; font-weight: 500; } .timeline-content { background: rgba(10, 10, 10, 0.6); padding: 25px 30px; border-radius: 4px; border: 1px solid rgba(255, 255, 255, 0.05); }
+        .timeline-content .sub-section { margin-bottom: 22px; } .timeline-content .sub-section:last-child { margin-bottom: 0; } .sub-section-title { font-family: var(--font-heading); font-size: 1rem; color: var(--neon-blue); letter-spacing: 1px; margin-bottom: 10px; text-transform: uppercase; border-bottom: 1px solid rgba(0,240,255,0.15); padding-bottom: 6px; }
+        .timeline-content ul li { position: relative; padding-left: 20px; margin-bottom: 10px; color: var(--text-muted); font-size: 0.93rem; line-height: 1.7; } .timeline-content ul li::before { content: '▹'; position: absolute; left: 0; color: var(--neon-blue); } .timeline-content ul li strong { color: var(--text-main); }
+        /* Roster */
+        .roster { padding: var(--section-padding); background-color: var(--bg-dark); }
+        .roster-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 25px; margin-top: 10px; }
+        .roster-card { background: var(--bg-surface); border: 1px solid rgba(255,255,255,0.05); border-radius: 8px; padding: 30px; transition: var(--transition); position: relative; overflow: hidden; }
+        .roster-card:hover { border-color: var(--esports-red); transform: translateY(-4px); box-shadow: 0 8px 25px rgba(255,0,60,0.08); }
+        .roster-card::before { content: ''; position: absolute; top: 0; left: 0; width: 3px; height: 100%; background: var(--esports-red); opacity: 0; transition: var(--transition); }
+        .roster-card:hover::before { opacity: 1; }
+        .roster-player { font-family: var(--font-heading); font-size: 1.4rem; color: var(--neon-blue); letter-spacing: 1px; margin-bottom: 8px; }
+        .roster-team { font-size: 0.9rem; color: var(--text-muted); margin-bottom: 12px; }
+        .roster-achievement { font-size: 0.9rem; color: var(--text-main); line-height: 1.6; padding-left: 15px; border-left: 2px solid rgba(0,240,255,0.3); }
+        .roster-badge { display: inline-block; font-size: 0.75rem; background: rgba(255,0,60,0.15); color: var(--esports-red); border: 1px solid rgba(255,0,60,0.3); padding: 3px 10px; border-radius: 2px; margin-bottom: 12px; font-family: var(--font-heading); letter-spacing: 1px; text-transform: uppercase; }
+        /* System */
+        .system { padding: var(--section-padding); background-color: var(--bg-surface); } .gallery-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; } .gallery-item { position: relative; display: block; height: 250px; background: #1a2333; border-radius: 8px; overflow: hidden; border: 1px solid rgba(255,255,255,0.05); transition: var(--transition); cursor: pointer; } .gallery-item:hover { border-color: var(--neon-blue); box-shadow: 0 0 20px rgba(0,240,255,0.2); transform: scale(1.02); z-index: 2; } .gallery-item img { width: 100%; height: 100%; object-fit: cover; opacity: 0.8; transition: var(--transition); } .gallery-item:hover img { opacity: 1; } .gallery-overlay { position: absolute; bottom: 0; left: 0; right: 0; padding: 20px; background: linear-gradient(to top, rgba(0,0,0,0.9), transparent); color: #fff; font-family: var(--font-heading); font-size: 1.2rem; transform: translateY(100%); transition: var(--transition); } .gallery-item:hover .gallery-overlay { transform: translateY(0); }
+        .lightbox { display: none; position: fixed; z-index: 2000; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.95); align-items: center; justify-content: center; backdrop-filter: blur(5px); } .lightbox img { max-width: 90%; max-height: 90vh; border-radius: 4px; box-shadow: 0 0 30px rgba(0,240,255,0.3); animation: zoomIn 0.3s ease; } .lightbox-close { position: absolute; top: 30px; right: 40px; color: #fff; font-size: 40px; cursor: pointer; transition: var(--transition); } .lightbox-close:hover { color: var(--esports-red); transform: scale(1.1); }
+        @keyframes zoomIn { from { transform: scale(0.8); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        /* Footer */
+        .footer { padding: 80px 5%; background: var(--bg-dark); border-top: 1px solid rgba(255,255,255,0.05); text-align: center; } .footer-title { font-family: var(--font-heading); font-size: 2.5rem; text-transform: uppercase; letter-spacing: 3px; margin-bottom: 15px; } .footer-subtitle { color: var(--text-muted); margin-bottom: 50px; font-size: 1.1rem; } .contact-grid { display: flex; justify-content: center; flex-wrap: wrap; gap: 40px; margin-bottom: 50px; } .contact-item { display: flex; flex-direction: column; align-items: center; gap: 10px; transition: var(--transition); } .contact-item:hover { color: var(--neon-blue); } .contact-icon { width: 50px; height: 50px; border-radius: 50%; background: var(--bg-surface); display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.05); transition: var(--transition); } .contact-item:hover .contact-icon { border-color: var(--neon-blue); box-shadow: 0 0 15px var(--neon-blue-glow); } .contact-label { font-size: 0.8rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; } .contact-value { font-size: 1rem; font-weight: 500; } .copyright { color: var(--text-muted); font-size: 0.85rem; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @media (max-width: 992px) { .nav-center { display: none; } .nav-actions { width: 100%; justify-content: flex-end; } .about-wrapper { grid-template-columns: 1fr; } }
+        @media (max-width: 768px) { .hero-title { font-size: 3rem; } .contact-grid { gap: 20px; flex-direction: column; align-items: center; } .timeline { padding-left: 20px; } .timeline-dot { left: -28px; } }
+    </style>
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="logo">Thisis<span>Cho</span></div>
+        <div class="nav-center">
+            <ul class="nav-links">
+                <li><a href="#about" data-i18n="nav_about">个人档案</a></li>
+                <li><a href="#skills" data-i18n="nav_skills">核心技能</a></li>
+                <li><a href="#experience" data-i18n="nav_exp">职业经历</a></li>
+                <li><a href="#roster" data-i18n="nav_roster">负责选手</a></li>
+                <li><a href="#system" data-i18n="nav_sys">系统模型</a></li>
+            </ul>
+        </div>
+        <div class="nav-actions">
+            <div class="lang-switcher">
+                <button class="lang-btn" id="currentLangBtn">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                    简体
+                </button>
+                <div class="lang-dropdown">
+                    <a href="#" onclick="changeLang('zh-CN', '简体')">简体中文</a>
+                    <a href="#" onclick="changeLang('zh-HK', '粤语')">繁體 (粵語)</a>
+                    <a href="#" onclick="changeLang('en', 'English')">English</a>
+                    <a href="#" onclick="changeLang('ja', '日本語')">日本語</a>
+                </div>
+            </div>
+            <button class="btn-pdf" id="pdfBtn" onclick="downloadPageAsPDF()" data-i18n="nav_pdf">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg>
+                简历下载
+            </button>
+        </div>
+    </nav>
+
+    <div id="pdf-progress"></div>
+
+    <!-- HERO -->
+    <section id="hero" class="hero">
+        <div class="hero-content">
+            <div class="hero-aka" data-i18n="hero_aka">Teddy | 太初</div>
+            <h1 class="hero-title">Thisis<span>Cho</span></h1>
+            <div class="hero-subtitle" data-i18n="hero_sub">战队经理 & 数据赛训先驱</div>
+            <div class="hero-quote">
+                <p data-i18n="hero_quote">"致力维持游戏良好生态，打击不良风气。<br>推动符合亚洲文化的 FPS 生态，打造冲出国际的顶尖队伍。"</p>
+            </div>
+            <div class="hero-cta">
+                <a href="#contact" class="btn-primary" data-i18n="btn_contact">联系</a>
+                <a href="#system" class="btn-secondary" data-i18n="btn_system">查看分析模型</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- ABOUT -->
+    <section id="about" class="about">
+        <div class="container">
+            <h2 class="section-title" data-i18n="title_about">个人档案</h2>
+            <div class="about-wrapper">
+                <div class="about-text" data-i18n="about_content">
+                    <p>在业界，无论是教练、俱乐部创始还是选手，都认可我作为团队<strong>「核心策略管理者」</strong>的角色。我并非传统的管理人员，我更擅长利用计算机科学背景，精准找到团队痛点，并引入创新的系统化方法加以改善。</p>
+                    <p>我一直以<strong>全职双线</strong>的方式运营——同时担任系统工程师与战队经理，确保我对战队的决策不受利益与环境左右，始终以团队最佳利益为优先。</p>
+                    <p>我精通职业战队上下游每一个岗位的角色定位，核心实力在于<strong>培育与管理战队人才</strong>，而非单纯带队。我拥有 7 年 T1 战队管理经验，曾主导亚太区 FPS 项目建队，并长期保障队伍锁定职业联赛（Pro League）席位。</p>
+                    <p>同时，我也是行业内首创将<strong>数理逻辑与决策模型</strong>深度引入赛训体系的先驱。通过独立研发的战队专用数据分析系统，我将玄学的赛训经验转化为客观的评估标准，实现了训练数据的数字、科学化——此系统不局限于彩虹六号，可适用于所有 FPS 游戏。</p>
+                </div>
+                <aside class="about-snapshot">
+                    <h3 class="snapshot-title" data-i18n="title_snapshot">档案快照</h3>
+                    <ul class="snapshot-list">
+                        <li>
+                            <span class="snapshot-label" data-i18n="snap_lbl_name">真实姓名</span>
+                            <span class="snapshot-value">黎靖文</span>
+                        </li>
+                        <li>
+                            <span class="snapshot-label" data-i18n="snap_lbl_age">年龄</span>
+                            <span class="snapshot-value">28</span>
+                        </li>
+                        <li>
+                            <span class="snapshot-label" data-i18n="snap_lbl_base">所在地</span>
+                            <span class="snapshot-value" data-i18n="snap_base">香港 / 支持长期驻地（具备内地居留证申领资格）</span>
+                        </li>
+                        <li>
+                            <span class="snapshot-label" data-i18n="snap_lbl_target">求职意向</span>
+                            <span class="snapshot-value" data-i18n="snap_target">战队经理（目标：BLG 等顶尖俱乐部）</span>
+                        </li>
+                        <li>
+                            <span class="snapshot-label" data-i18n="snap_lbl_edu">学历</span>
+                            <span class="snapshot-value" data-i18n="snap_edu">计算机科学学士<br>澳洲伍伦岗大学 (UOW)</span>
+                        </li>
+                        <li>
+                            <span class="snapshot-label" data-i18n="snap_lbl_lang">语言能力</span>
+                            <span class="snapshot-value" data-i18n="snap_lang">英语（精通）/ 国语（精通）/ 粤语（母语）/ 四川话（精通）/ 日语（JLPT N3）</span>
+                        </li>
+                    </ul>
+                </aside>
+            </div>
+        </div>
+    </section>
+
+    <!-- SKILLS -->
+    <section id="skills" class="skills">
+        <div class="container">
+            <h2 class="section-title" data-i18n="title_skills">核心技能</h2>
+            <div class="skills-grid">
+                <div class="skill-card">
+                    <div class="skill-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg></div>
+                    <h3 class="skill-title" data-i18n="skill_1_t">赛事运营与体系搭建</h3>
+                    <p class="skill-desc" data-i18n="skill_1_d">7 年 T1 战队管理经验，主导亚太区 FPS 项目建队与赛训体系落地。擅长跨国成员调度、底层选拔机制建立、全球教练资源统整，以及将素人选手直接提拔至职业联赛首发。同时设有选手心理辅导项目，保障团队长期稳定运营。</p>
+                </div>
+                <div class="skill-card">
+                    <div class="skill-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg></div>
+                    <h3 class="skill-title" data-i18n="skill_2_t">数据模型与赛训科学</h3>
+                    <p class="skill-desc" data-i18n="skill_2_d">行业首创战队专用数据分析系统，不局限于彩虹六号，可应用于所有 FPS 游戏。将地图池 BP、每位选手的攻防角色池博弈转化为客观数字化评估标准，让战术制定不再依赖玄学，以严密逻辑支持教练组决策。</p>
+                </div>
+                <div class="skill-card">
+                    <div class="skill-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+                    <h3 class="skill-title" data-i18n="skill_3_t">风险控制与品行管理</h3>
+                    <p class="skill-desc" data-i18n="skill_3_d">主张品格优先大于能力的团队文化，不主张微观管理。针对选手言论及政治红线建立标准化干预机制；并配有一对一心理疏导流程，保障高压赛场下的出勤率与竞技下限，规避公关危机。</p>
+                </div>
+                <div class="skill-card">
+                    <div class="skill-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="1" x2="12" y2="23"/><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg></div>
+                    <h3 class="skill-title" data-i18n="skill_4_t">商业资源整合</h3>
+                    <p class="skill-desc" data-i18n="skill_4_d">独立完成一线外设品牌赞助谈判，成功引入华硕 ROG、SteelSeries、HyperX、GIGABYTE、2000Fun 等品牌的实物与资金赞助。拥有大中华区（香港、台湾）商务对接渠道，维持长期商业合作关系。</p>
+                </div>
+                <div class="skill-card">
+                    <div class="skill-icon"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg></div>
+                    <h3 class="skill-title" data-i18n="skill_5_t">人脉与行业资源</h3>
+                    <p class="skill-desc" data-i18n="skill_5_d">深度掌握 APEX 与彩虹六号亚太赛区活跃选手、新秀及国际顶级教练人脈网络，手持世界冠军级教练资源。结合系统工程背景，擅长利用 AI 工具构建无视地域限制的远端协作与数字办公体系。</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- EXPERIENCE -->
+    <section id="experience" class="experience">
+        <div class="container">
+            <h2 class="section-title" data-i18n="title_exp">职业经历</h2>
+            <div class="timeline">
+
+                <!-- Job 1 -->
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <span class="timeline-date">2025 – 2026</span>
+                    <h3 class="timeline-title" data-i18n="exp_1_role">国内俱乐部重建顾问</h3>
+                    <div class="timeline-company" data-i18n="exp_1_co">Freelance / Consultant</div>
+                    <div class="timeline-content" data-i18n="exp_1_desc">
+                        <ul>
+                            <li>协助俱乐部厘清团队方向，解决资源统整失衡问题，重建完整的训练体系与团队架构，参与 GVC 先锋赛并获得<strong>前四名</strong>，并提供全程战略建议。</li>
+                            <li>深度熟悉国内彩六市场竞争状况及不同持份者对接流程，成功为国内俱乐部引入港台澳优质选手，突破地域招募限制。</li>
+                            <li>与东南亚赛区赛事组及其他俱乐部保持紧密联系，深度掌握比赛规则与运营流程，为俱乐部提供跨区赛事对接支持。</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Job 2 -->
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <span class="timeline-date">2019 – 至今</span>
+                    <h3 class="timeline-title" data-i18n="exp_2_role">战队经理 & 商务拓展（兼任）</h3>
+                    <div class="timeline-company" data-i18n="exp_2_co">潜龙电竞 (Latent Dragon)</div>
+                    <div class="timeline-content" data-i18n="exp_2_desc">
+                        <div class="sub-section">
+                            <div class="sub-section-title">赛绩保障与赛事执行</div>
+                            <ul>
+                                <li>在香港赛区恢复职业资格后，主导战队赛训资源配置，确保队伍<strong>持续锁定职业联赛（Pro League）席位</strong>，所带队伍一直保持席位。</li>
+                                <li>统筹并带队参与 <strong>2020 MSI 武汉彩六交流赛</strong>及台湾社群线下赛，负责跨区差旅物流、赛事对接及现场突发事件处理。</li>
+                            </ul>
+                        </div>
+                        <div class="sub-section">
+                            <div class="sub-section-title">梯队建设与人才挖掘</div>
+                            <ul>
+                                <li>建立底层选拔机制，通过实训考察，擅长<strong>发掘无背景的素人选手</strong>，并将其直接提拔至职业联赛首发阵容。</li>
+                                <li>与整个亚太区选手保持交流，随时能调动并挖掘人才；具备处理跨国成员语言交流壁垒的丰富经验。</li>
+                                <li>整合亚太区优质赛训资源，成功引入并对接<strong>海外冠军级教练</strong>，通过多语种能力消除跨国教练组与本土选手的沟通壁垒。</li>
+                            </ul>
+                        </div>
+                        <div class="sub-section">
+                            <div class="sub-section-title">团队风控与纪律管理</div>
+                            <ul>
+                                <li>主张<strong>品格优先大于能力</strong>的团队文化，制定俱乐部选手行为规范，严格分清不同岗位定位，不主动干预团队游戏内部决策。</li>
+                                <li>针对电竞高频公关风险（不当言论、政治敏感议题），建立预警与强制干预机制，确保团队运营合规，规避公关危机。</li>
+                                <li>建立一对一心理疏导流程，解决队内沟通摩擦与赛场高压带来的情绪折损，保障出勤率与竞技下限。</li>
+                            </ul>
+                        </div>
+                        <div class="sub-section">
+                            <div class="sub-section-title">品牌商务拓展</div>
+                            <ul>
+                                <li>负责俱乐部亚太区商业赞助的开拓与谈判，成功引入<strong>华硕 ROG、SteelSeries、HyperX、GIGABYTE（技嘉）、2000Fun</strong> 等品牌的实物与资金赞助。</li>
+                                <li>对接品牌方商业诉求，规划并落地赞助商权益，维持长期商业合作关系。</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Job 3 -->
+                <div class="timeline-item">
+                    <div class="timeline-dot"></div>
+                    <span class="timeline-date">2024 – 2026</span>
+                    <h3 class="timeline-title" data-i18n="exp_3_role">系统工程师 (System Engineer)</h3>
+                    <div class="timeline-company" data-i18n="exp_3_co">Yazaki（矢崎）</div>
+                    <div class="timeline-content" data-i18n="exp_3_desc">
+                        <div class="sub-section">
+                            <div class="sub-section-title">数据安全基建</div>
+                            <ul>
+                                <li>主导香港分部<strong>网络安全基建项目</strong>，负责数据维稳与安全防护。此经验完美复用于电竞场景，确保战队高度机密的战术模型与训练赛录像的绝对安全性。</li>
+                            </ul>
+                        </div>
+                        <div class="sub-section">
+                            <div class="sub-section-title">AI 商业化落地</div>
+                            <ul>
+                                <li>负责推动 AI 项目在商业端的实际落地，并主导企业内部的 AI 教育工作。此能力可直接复用于战队的<strong>「数据化赛训体系」</strong>与选手表现预测模型开发。</li>
+                            </ul>
+                        </div>
+                        <div class="sub-section">
+                            <div class="sub-section-title">跨地域远端工作体系</div>
+                            <ul>
+                                <li>为香港分部构建无地域限制的远端工作生态，利用 AI 统整工具确保信息同步与沟通无阻。</li>
+                                <li>此能力可完美解决职业战队在跨国比赛（如 S 赛、MSI）期间的远程协作痛点，确保教练、选手、管理层三方在不同物理空间下的沟通<strong>「零延迟、高透明」</strong>。</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- ROSTER -->
+    <section id="roster" class="roster">
+        <div class="container">
+            <h2 class="section-title" data-i18n="title_roster">曾负责选手</h2>
+            <p style="color: var(--text-muted); margin-bottom: 40px; max-width: 800px;" data-i18n="roster_desc">以下为本人曾直接负责培育、管理或协助达成职业成就的选手，涵盖东南亚、中国大陆及香港赛区。</p>
+            <div class="roster-grid">
+                <div class="roster-card">
+                    <div class="roster-badge" data-i18n="badge_active">现役</div>
+                    <div class="roster-player">Joegor</div>
+                    <div class="roster-team">Elevate</div>
+                    <div class="roster-achievement" data-i18n="roster_joegor">多次代表东南亚出战 MAJOR 国际赛事，是亚太区最具代表性的职业选手之一。</div>
+                </div>
+                <div class="roster-card">
+                    <div class="roster-badge" data-i18n="badge_active">现役</div>
+                    <div class="roster-player">KZB · KOTLY · MOMORINGZ · SDGUNDUM</div>
+                    <div class="roster-team" data-i18n="roster_cn_team">国内俱乐部</div>
+                    <div class="roster-achievement" data-i18n="roster_cn">现役国内职业选手，由本人协助引入并对接国内赛区，完成跨区招募与融合。</div>
+                </div>
+                <div class="roster-card">
+                    <div class="roster-badge" data-i18n="badge_active">现役</div>
+                    <div class="roster-player">KSAN</div>
+                    <div class="roster-team">7th</div>
+                    <div class="roster-achievement" data-i18n="roster_ksan">由本人独立组队，<strong>首次参加职业联赛即成功获得席位</strong>，是从零到职业的典型成功案例。</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- SYSTEM MODELS -->
+    <section id="system" class="system">
+        <div class="container">
+            <h2 class="section-title" data-i18n="title_sys">系统模型</h2>
+            <p style="color: var(--text-muted); margin-bottom: 40px; max-width: 800px;" data-i18n="sys_desc">展示我独立研发的战队专用数据分析系统。<strong style="color:var(--text-main)">不局限于彩虹六号，可应用于所有游戏。</strong>能将庞杂的赛训数据转化为直观图表，进行地图博弈、角色池分析与竞争对手实力评估。系统持续优化中，属独立经营，各队伍数据微调需按实际状况调节。</p>
+            <div class="gallery-grid">
+                <div class="gallery-item" onclick="openLightbox('https://i.postimg.cc/v87YVZ3n/Screenshot-2026-03-22-130638.png')">
+                    <img src="https://i.postimg.cc/v87YVZ3n/Screenshot-2026-03-22-130638.png" alt="Model 1">
+                    <div class="gallery-overlay" data-i18n="sys_g1">综合数据面版 01</div>
+                </div>
+                <div class="gallery-item" onclick="openLightbox('https://i.postimg.cc/HLhQCtft/Screenshot-2026-03-22-150130.png')">
+                    <img src="https://i.postimg.cc/HLhQCtft/Screenshot-2026-03-22-150130.png" alt="Model 2">
+                    <div class="gallery-overlay" data-i18n="sys_g2">选手表现评估 02</div>
+                </div>
+                <div class="gallery-item" onclick="openLightbox('https://i.postimg.cc/WpmNk1XG/Screenshot-2026-03-22-130704.png')">
+                    <img src="https://i.postimg.cc/WpmNk1XG/Screenshot-2026-03-22-130704.png" alt="Model 3">
+                    <div class="gallery-overlay" data-i18n="sys_g3">地图 BP 分析 03</div>
+                </div>
+                <div class="gallery-item" onclick="openLightbox('https://i.postimg.cc/2jdkZS24/Screenshot-2026-03-22-130713.png')">
+                    <img src="https://i.postimg.cc/2jdkZS24/Screenshot-2026-03-22-130713.png" alt="Model 4">
+                    <div class="gallery-overlay" data-i18n="sys_g4">攻防战术推演 04</div>
+                </div>
+                <div class="gallery-item" onclick="openLightbox('https://i.postimg.cc/QNg8Td0g/Screenshot-2026-03-22-130729.png')">
+                    <img src="https://i.postimg.cc/QNg8Td0g/Screenshot-2026-03-22-130729.png" alt="Model 5">
+                    <div class="gallery-overlay" data-i18n="sys_g5">竞品实力矩阵 05</div>
+                </div>
+                <div class="gallery-item" onclick="openLightbox('https://i.postimg.cc/dQRsyV4B/Screenshot-2026-03-22-130747.png')">
+                    <img src="https://i.postimg.cc/dQRsyV4B/Screenshot-2026-03-22-130747.png" alt="Model 6">
+                    <div class="gallery-overlay" data-i18n="sys_g6">赛训趋势追踪 06</div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <div id="lightbox" class="lightbox" onclick="closeLightbox()">
+        <span class="lightbox-close">&times;</span>
+        <img id="lightbox-img" src="" alt="Enlarged Model" onclick="event.stopPropagation()">
+    </div>
+
+    <!-- FOOTER / CONTACT -->
+    <footer id="contact" class="footer">
+        <div class="container">
+            <h2 class="footer-title" data-i18n="footer_title">准备好打造冠军战队了吗？</h2>
+            <p class="footer-subtitle" data-i18n="footer_sub">立即联络，让我们以数据与科学重塑电竞格局。</p>
+            <div class="contact-grid">
+                <div class="contact-item">
+                    <div class="contact-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg></div>
+                    <span class="contact-label">Phone</span><span class="contact-value">+86 130 6691 9694</span>
+                </div>
+                <div class="contact-item">
+                    <div class="contact-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg></div>
+                    <span class="contact-label">WeChat</span><span class="contact-value">llccmmccll</span>
+                </div>
+                <div class="contact-item">
+                    <div class="contact-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path><polyline points="22,6 12,13 2,6"></polyline></svg></div>
+                    <span class="contact-label">Email</span><span class="contact-value">teddysama@qq.com</span>
+                </div>
+                <a href="https://liquipedia.net/rainbowsix/Thisischo" target="_blank" class="contact-item">
+                    <div class="contact-icon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg></div>
+                    <span class="contact-label">Liquipedia</span><span class="contact-value" style="text-decoration: underline; color: var(--neon-blue);">LIQUIPEDIA Thisischo</span>
+                </a>
+            </div>
+            <p class="copyright">© 2026 ThisisCho. All Rights Reserved. Empowered by Data & System Engineering.</p>
+        </div>
+    </footer>
+
+    <script>
+        function openLightbox(src) { document.getElementById('lightbox-img').src = src; document.getElementById('lightbox').style.display = 'flex'; document.body.style.overflow = 'hidden'; }
+        function closeLightbox() { document.getElementById('lightbox').style.display = 'none'; document.body.style.overflow = 'auto'; }
+
+        const translations = {
+            'zh-CN': {
+                nav_about: '个人档案', nav_skills: '核心技能', nav_exp: '职业经历', nav_roster: '负责选手', nav_sys: '系统模型', nav_pdf: '简历下载',
+                hero_aka: 'Teddy | 太初', hero_sub: '战队经理 & 数据赛训先驱',
+                hero_quote: '"致力维持游戏良好生态，打击不良风气。<br>推动符合亚洲文化的 FPS 生态，打造冲出国际的顶尖队伍。"',
+                btn_contact: '联系', btn_system: '查看分析模型',
+                title_about: '个人档案', title_skills: '核心技能', title_exp: '职业经历', title_roster: '曾负责选手', title_sys: '系统模型', title_snapshot: '档案快照',
+                snap_lbl_name: '真实姓名', snap_lbl_age: '年龄', snap_lbl_base: '所在地', snap_lbl_target: '求职意向', snap_lbl_edu: '学历', snap_lbl_lang: '语言能力',
+                snap_base: '香港 / 支持长期驻地（具备内地居留证申领资格）',
+                snap_target: '战队经理（目标：BLG 等顶尖俱乐部）',
+                snap_edu: '计算机科学学士<br>澳洲伍伦岗大学 (UOW)',
+                snap_lang: '英语（精通）/ 国语（精通）/ 粤语（母语）/ 四川话（精通）/ 日语（JLPT N3）',
+                about_content: '<p>在业界，无论是教练、俱乐部创始还是选手，都认可我作为团队<strong>「核心策略管理者」</strong>的角色。我并非传统的管理人员，我更擅长利用计算机科学背景，精准找到团队痛点，并引入创新的系统化方法加以改善。</p><p>我一直以<strong>全职双线</strong>的方式运营——同时担任系统工程师与战队经理，确保我对战队的决策不受利益与环境左右，始终以团队最佳利益为优先。</p><p>我精通职业战队上下游每一个岗位的角色定位，核心实力在于<strong>培育与管理战队人才</strong>，而非单纯带队。我拥有 7 年 T1 战队管理经验，曾主导亚太区 FPS 项目建队，并长期保障队伍锁定职业联赛（Pro League）席位。</p><p>同时，我也是行业内首创将<strong>数理逻辑与决策模型</strong>深度引入赛训体系的先驱。通过独立研发的战队专用数据分析系统，我将玄学的赛训经验转化为客观的评估标准，实现了训练数据的数字、科学化——此系统不局限于彩虹六号，可适用于所有 FPS 游戏。</p>',
+                skill_1_t: '赛事运营与体系搭建', skill_1_d: '7 年 T1 战队管理经验，主导亚太区 FPS 项目建队与赛训体系落地。擅长跨国成员调度、底层选拔机制建立、全球教练资源统整，以及将素人选手直接提拔至职业联赛首发。同时设有选手心理辅导项目，保障团队长期稳定运营。',
+                skill_2_t: '数据模型与赛训科学', skill_2_d: '行业首创战队专用数据分析系统，不局限于彩虹六号，可应用于所有 FPS 游戏。将地图池 BP、每位选手的攻防角色池博弈转化为客观数字化评估标准，让战术制定不再依赖玄学，以严密逻辑支持教练组决策。',
+                skill_3_t: '风险控制与品行管理', skill_3_d: '主张品格优先大于能力的团队文化，不主张微观管理。针对选手言论及政治红线建立标准化干预机制；并配有一对一心理疏导流程，保障高压赛场下的出勤率与竞技下限，规避公关危机。',
+                skill_4_t: '商业资源整合', skill_4_d: '独立完成一线外设品牌赞助谈判，成功引入华硕 ROG、SteelSeries、HyperX、GIGABYTE、2000Fun 等品牌的实物与资金赞助。拥有大中华区（香港、台湾）商务对接渠道，维持长期商业合作关系。',
+                skill_5_t: '人脉与行业资源', skill_5_d: '深度掌握 APEX 与彩虹六号亚太赛区活跃选手、新秀及国际顶级教练人脈网络，手持世界冠军级教练资源。结合系统工程背景，擅长利用 AI 工具构建无视地域限制的远端协作与数字办公体系。',
+                exp_1_role: '国内俱乐部重建顾问', exp_1_co: 'Freelance / Consultant',
+                exp_1_desc: '<ul><li>协助俱乐部厘清团队方向，解决资源统整失衡问题，重建完整的训练体系与团队架构，参与 GVC 先锋赛并获得<strong>前四名</strong>，并提供全程战略建议。</li><li>深度熟悉国内彩六市场竞争状况及不同持份者对接流程，成功为国内俱乐部引入港台澳优质选手，突破地域招募限制。</li><li>与东南亚赛区赛事组及其他俱乐部保持紧密联系，深度掌握比赛规则与运营流程，为俱乐部提供跨区赛事对接支持。</li></ul>',
+                exp_2_role: '战队经理 & 商务拓展（兼任）', exp_2_co: '潜龙电竞 (Latent Dragon)',
+                exp_2_desc: '<div class="sub-section"><div class="sub-section-title">赛绩保障与赛事执行</div><ul><li>在香港赛区恢复职业资格后，主导战队赛训资源配置，确保队伍<strong>持续锁定职业联赛（Pro League）席位</strong>，所带队伍一直保持席位。</li><li>统筹并带队参与 <strong>2020 MSI 武汉彩六交流赛</strong>及台湾社群线下赛，负责跨区差旅物流、赛事对接及现场突发事件处理。</li></ul></div><div class="sub-section"><div class="sub-section-title">梯队建设与人才挖掘</div><ul><li>建立底层选拔机制，通过实训考察，擅长<strong>发掘无背景的素人选手</strong>，并将其直接提拔至职业联赛首发阵容。</li><li>与整个亚太区选手保持交流，随时能调动并挖掘人才；具备处理跨国成员语言交流壁垒的丰富经验。</li><li>整合亚太区优质赛训资源，成功引入并对接<strong>海外冠军级教练</strong>，通过多语种能力消除跨国教练组与本土选手的沟通壁垒。</li></ul></div><div class="sub-section"><div class="sub-section-title">团队风控与纪律管理</div><ul><li>主张<strong>品格优先大于能力</strong>的团队文化，制定俱乐部选手行为规范，不主动干预团队游戏内部决策，不主张微观管理。</li><li>针对电竞高频公关风险（不当言论、政治敏感议题），建立预警与强制干预机制，确保团队运营合规，规避公关危机。</li><li>建立一对一心理疏导流程，解决队内沟通摩擦与赛场高压带来的情绪折损，保障出勤率与竞技下限。</li></ul></div><div class="sub-section"><div class="sub-section-title">品牌商务拓展</div><ul><li>负责俱乐部亚太区商业赞助的开拓与谈判，成功引入<strong>华硕 ROG、SteelSeries、HyperX、GIGABYTE（技嘉）、2000Fun</strong> 等品牌的实物与资金赞助。</li><li>对接品牌方商业诉求，规划并落地赞助商权益，维持长期商业合作关系。</li></ul></div>',
+                exp_3_role: '系统工程师 (System Engineer)', exp_3_co: 'Yazaki（矢崎）',
+                exp_3_desc: '<div class="sub-section"><div class="sub-section-title">数据安全基建</div><ul><li>主导香港分部<strong>网络安全基建项目</strong>，负责数据维稳与安全防护。此经验完美复用于电竞场景，确保战队高度机密的战术模型与训练赛录像的绝对安全性。</li></ul></div><div class="sub-section"><div class="sub-section-title">AI 商业化落地</div><ul><li>负责推动 AI 项目在商业端的实际落地，并主导企业内部的 AI 教育工作。此能力可直接复用于战队的<strong>「数据化赛训体系」</strong>与选手表现预测模型开发。</li></ul></div><div class="sub-section"><div class="sub-section-title">跨地域远端工作体系</div><ul><li>为香港分部构建无地域限制的远端工作生态，利用 AI 统整工具确保信息同步与沟通无阻。</li><li>此能力可完美解决职业战队在跨国比赛（如 S 赛、MSI）期间的远程协作痛点，确保教练、选手、管理层三方在不同物理空间下的沟通<strong>「零延迟、高透明」</strong>。</li></ul></div>',
+                roster_desc: '以下为本人曾直接负责培育、管理或协助达成职业成就的选手，涵盖东南亚、中国大陆及香港赛区。',
+                badge_active: '现役',
+                roster_joegor: '多次代表东南亚出战 MAJOR 国际赛事，是亚太区最具代表性的职业选手之一。',
+                roster_cn_team: '国内俱乐部', roster_cn: '现役国内职业选手，由本人协助引入并对接国内赛区，完成跨区招募与融合。',
+                roster_ksan: '由本人独立组队，<strong>首次参加职业联赛即成功获得席位</strong>，是从零到职业的典型成功案例。',
+                sys_desc: '展示我独立研发的战队专用数据分析系统。<strong style="color:var(--text-main)">不局限于彩虹六号，可应用于所有游戏。</strong>能将庞杂的赛训数据转化为直观图表，进行地图博弈、角色池分析与竞争对手实力评估。系统持续优化中，属独立经营，各队伍数据微调需按实际状况调节。',
+                sys_g1: '综合数据面版 01', sys_g2: '选手表现评估 02', sys_g3: '地图 BP 分析 03', sys_g4: '攻防战术推演 04', sys_g5: '竞品实力矩阵 05', sys_g6: '赛训趋势追踪 06',
+                footer_title: '准备好打造冠军战队了吗？', footer_sub: '立即联络，让我们以数据与科学重塑电竞格局。'
+            },
+            'zh-HK': {
+                nav_about: '個人檔案', nav_skills: '核心技能', nav_exp: '職業經歷', nav_roster: '負責選手', nav_sys: '系統模型', nav_pdf: '履歷下載',
+                hero_aka: 'Teddy | 太初', hero_sub: '戰隊經理 & 數據賽訓先驅',
+                hero_quote: '「致力維持遊戲良好生態，打擊不良風氣。<br>推動符合亞洲文化的 FPS 生態，打造衝出國際的頂尖隊伍。」',
+                btn_contact: '聯絡', btn_system: '查看分析模型',
+                title_about: '個人檔案', title_skills: '核心技能', title_exp: '職業經歷', title_roster: '曾負責選手', title_sys: '系統模型', title_snapshot: '檔案快照',
+                snap_lbl_name: '真實姓名', snap_lbl_age: '年齡', snap_lbl_base: '所在地', snap_lbl_target: '求職意向', snap_lbl_edu: '學歷', snap_lbl_lang: '語言能力',
+                snap_base: '香港 / 支持長期駐地（具備內地居留證申領資格）',
+                snap_target: '戰隊經理（目標：BLG 等頂尖俱樂部）',
+                snap_edu: '計算機科學學士<br>澳洲伍倫崗大學 (UOW)',
+                snap_lang: '英語（精通）/ 國語（精通）/ 粵語（母語）/ 四川話（精通）/ 日語（JLPT N3）',
+                about_content: '<p>喺業界，無論係教練、俱樂部創辦人定係選手，都認可我作為團隊<strong>「核心策略管理者」</strong>嘅角色。我並非傳統嘅管理人員，我更擅長利用計算機科學背景，精準搵到團隊痛點，並引入創新嘅系統化方法加以改善。</p><p>我一直以<strong>全職雙線</strong>方式運營——同時擔任系統工程師同戰隊經理，確保我對戰隊嘅決策唔受利益同環境左右，始終以團隊最佳利益為優先。</p><p>我精通職業戰隊上下游每一個崗位嘅角色定位，核心實力在於<strong>培育同管理戰隊人才</strong>，而非單純帶隊。我擁有 7 年 T1 戰隊管理經驗，曾主導亞太區 FPS 項目建隊，並長期保障隊伍鎖定職業聯賽（Pro League）席位。</p><p>同時，我亦係業界首創將<strong>數理邏輯同決策模型</strong>深度引入賽訓體系嘅先驅。通過獨立研發嘅戰隊專用數據分析系統，我將玄學嘅賽訓經驗轉化為客觀嘅評估標準，實現咗訓練數據嘅數字化、科學化——此系統唔局限於彩虹六號，可適用於所有 FPS 遊戲。</p>',
+                skill_1_t: '賽事運營與體系搭建', skill_1_d: '7 年 T1 戰隊管理經驗，主導亞太區 FPS 項目建隊與賽訓體系落地。擅長跨國成員調度、底層選拔機制建立、全球教練資源統整，以及將素人選手直接提拔至職業聯賽首發。同時設有選手心理輔導項目，保障團隊長期穩定運營。',
+                skill_2_t: '數據模型與賽訓科學', skill_2_d: '行業首創戰隊專用數據分析系統，唔局限於彩虹六號，可應用於所有 FPS 遊戲。將地圖池 BP、每位選手嘅攻防角色池博弈轉化為客觀數字化評估標準，讓戰術制定唔再依賴玄學，以嚴密邏輯支持教練組決策。',
+                skill_3_t: '風險控制與品行管理', skill_3_d: '主張品格優先大於能力嘅團隊文化，唔主張微觀管理。針對選手言論及政治紅線建立標準化干預機制；並配有一對一心理疏導流程，保障高壓賽場下嘅出勤率與競技下限，規避公關危機。',
+                skill_4_t: '商業資源整合', skill_4_d: '獨立完成一線外設品牌贊助談判，成功引入華碩 ROG、SteelSeries、HyperX、GIGABYTE、2000Fun 等品牌嘅實物與資金贊助。擁有大中華區（香港、台灣）商務對接渠道，維持長期商業合作關係。',
+                skill_5_t: '人脈與行業資源', skill_5_d: '深度掌握 APEX 同彩虹六號亞太賽區活躍選手、新秀及國際頂級教練人脈網絡，手持世界冠軍級教練資源。結合系統工程背景，擅長利用 AI 工具構建無視地域限制嘅遠端協作與數字辦公體系。',
+                exp_1_role: '國內俱樂部重建顧問', exp_1_co: 'Freelance / Consultant',
+                exp_1_desc: '<ul><li>協助俱樂部釐清團隊方向，解決資源統整失衡問題，重建完整嘅訓練體系與團隊架構，參與 GVC 先鋒賽並獲得<strong>前四名</strong>，並提供全程戰略建議。</li><li>深度熟悉國內彩六市場競爭狀況及不同持份者對接流程，成功為國內俱樂部引入港台澳優質選手，突破地域招募限制。</li><li>與東南亞賽區賽事組及其他俱樂部保持緊密聯繫，深度掌握比賽規則與運營流程，為俱樂部提供跨區賽事對接支持。</li></ul>',
+                exp_2_role: '戰隊經理 & 商務拓展（兼任）', exp_2_co: '潛龍電競 (Latent Dragon)',
+                exp_2_desc: '<div class="sub-section"><div class="sub-section-title">賽績保障與賽事執行</div><ul><li>在香港賽區恢復職業資格後，主導戰隊賽訓資源配置，確保隊伍<strong>持續鎖定職業聯賽（Pro League）席位</strong>，所帶隊伍一直保持席位。</li><li>統籌並帶隊參與 <strong>2020 MSI 武漢彩六交流賽</strong>及台灣社群線下賽，負責跨區差旅物流、賽事對接及現場突發事件處理。</li></ul></div><div class="sub-section"><div class="sub-section-title">梯隊建設與人才挖掘</div><ul><li>建立底層選拔機制，通過實訓考察，擅長<strong>發掘無背景嘅素人選手</strong>，並將其直接提拔至職業聯賽首發陣容。</li><li>與整個亞太區選手保持交流，隨時能調動並挖掘人才；具備處理跨國成員語言交流壁壘嘅豐富經驗。</li><li>整合亞太區優質賽訓資源，成功引入並對接<strong>海外冠軍級教練</strong>，通過多語種能力消除跨國教練組與本土選手嘅溝通壁壘。</li></ul></div><div class="sub-section"><div class="sub-section-title">團隊風控與紀律管理</div><ul><li>主張<strong>品格優先大於能力</strong>嘅團隊文化，制定俱樂部選手行為規範，唔主動干預團隊遊戲內部決策，唔主張微觀管理。</li><li>針對電競高頻公關風險（不當言論、政治敏感議題），建立預警與強制干預機制，確保團隊運營合規，規避公關危機。</li><li>建立一對一心理疏導流程，解決隊內溝通摩擦與賽場高壓帶來嘅情緒折損，保障出勤率與競技下限。</li></ul></div><div class="sub-section"><div class="sub-section-title">品牌商務拓展</div><ul><li>負責俱樂部亞太區商業贊助嘅開拓與談判，成功引入<strong>華碩 ROG、SteelSeries、HyperX、GIGABYTE（技嘉）、2000Fun</strong> 等品牌嘅實物與資金贊助。</li><li>對接品牌方商業訴求，規劃並落地贊助商權益，維持長期商業合作關係。</li></ul></div>',
+                exp_3_role: '系統工程師 (System Engineer)', exp_3_co: 'Yazaki（矢崎）',
+                exp_3_desc: '<div class="sub-section"><div class="sub-section-title">數據安全基建</div><ul><li>主導香港分部<strong>網絡安全基建項目</strong>，負責數據維穩與安全防護。此經驗完美複用於電競場景，確保戰隊高度機密嘅戰術模型與訓練賽錄像嘅絕對安全性。</li></ul></div><div class="sub-section"><div class="sub-section-title">AI 商業化落地</div><ul><li>負責推動 AI 項目在商業端嘅實際落地，並主導企業內部嘅 AI 教育工作。此能力可直接複用於戰隊嘅<strong>「數據化賽訓體系」</strong>與選手表現預測模型開發。</li></ul></div><div class="sub-section"><div class="sub-section-title">跨地域遠端工作體系</div><ul><li>為香港分部構建無地域限制嘅遠端工作生態，利用 AI 統整工具確保信息同步與溝通無阻。</li><li>此能力可完美解決職業戰隊在跨國比賽（如 S 賽、MSI）期間嘅遠程協作痛點，確保教練、選手、管理層三方在不同物理空間下嘅溝通<strong>「零延遲、高透明」</strong>。</li></ul></div>',
+                roster_desc: '以下為本人曾直接負責培育、管理或協助達成職業成就嘅選手，涵蓋東南亞、中國大陸及香港賽區。',
+                badge_active: '現役',
+                roster_joegor: '多次代表東南亞出戰 MAJOR 國際賽事，係亞太區最具代表性嘅職業選手之一。',
+                roster_cn_team: '國內俱樂部', roster_cn: '現役國內職業選手，由本人協助引入並對接國內賽區，完成跨區招募與融合。',
+                roster_ksan: '由本人獨立組隊，<strong>首次參加職業聯賽即成功獲得席位</strong>，係從零到職業嘅典型成功案例。',
+                sys_desc: '展示我獨立研發嘅戰隊專用數據分析系統。<strong style="color:var(--text-main)">唔局限於彩虹六號，可應用於所有遊戲。</strong>能將龐雜嘅賽訓數據轉化為直觀圖表，進行地圖博弈、角色池分析與競爭對手實力評估。系統持續優化中，屬獨立經營，各隊伍數據微調需按實際狀況調節。',
+                sys_g1: '綜合數據面版 01', sys_g2: '選手表現評估 02', sys_g3: '地圖 BP 分析 03', sys_g4: '攻防戰術推演 04', sys_g5: '競品實力矩陣 05', sys_g6: '賽訓趨勢追蹤 06',
+                footer_title: '準備好打造冠軍戰隊了嗎？', footer_sub: '立即聯絡，讓我們以數據與科學重塑電競格局。'
+            },
+            'en': {
+                nav_about: 'Profile', nav_skills: 'Skills', nav_exp: 'Experience', nav_roster: 'Players', nav_sys: 'Models', nav_pdf: 'Download CV',
+                hero_aka: 'Teddy | Taichu', hero_sub: 'Esports Team Manager & Data Strategist',
+                hero_quote: '"Committed to maintaining a healthy gaming ecosystem and combating toxic behavior.<br>Driving an Asian FPS scene built for international dominance — not just regional supremacy."',
+                btn_contact: 'Contact', btn_system: 'View Models',
+                title_about: 'Profile', title_skills: 'Core Skills', title_exp: 'Experience', title_roster: 'Players Managed', title_sys: 'System Models', title_snapshot: 'Snapshot',
+                snap_lbl_name: 'Real Name', snap_lbl_age: 'Age', snap_lbl_base: 'Location', snap_lbl_target: 'Target Role', snap_lbl_edu: 'Education', snap_lbl_lang: 'Languages',
+                snap_base: 'Hong Kong / Open to Relocation (Eligible for Mainland China Residency Permit)',
+                snap_target: 'Team Manager (Target: Top-tier clubs incl. BLG)',
+                snap_edu: 'Bachelor of Computer Science<br>University of Wollongong, Australia (UOW)',
+                snap_lang: 'English (Fluent) / Mandarin (Fluent) / Cantonese (Native) / Sichuanese (Fluent) / Japanese (JLPT N3)',
+                about_content: '<p>In the industry, coaches, club founders, and players alike recognize me as the team\'s <strong>"Core Strategic Manager."</strong> Unlike traditional managers, I leverage my computer science background to pinpoint team pain points and introduce innovative, systematic solutions.</p><p>I have always operated on a <strong>dual full-time track</strong> — simultaneously serving as a System Engineer and Team Manager — ensuring that my decisions for the team are never influenced by financial interests or external pressures, always prioritizing the team\'s best interests.</p><p>I am highly proficient in every role across a professional team\'s structure. My core strength lies in <strong>cultivating and developing esports talent</strong>, not merely managing a roster. With 7 years of T1 team management experience, I have spearheaded APAC FPS team builds and consistently secured Pro League spots.</p><p>I am also an industry pioneer in deeply integrating <strong>mathematical logic and decision-making models</strong> into training systems. Through my independently developed data analysis platform, I transform abstract coaching intuition into objective, measurable metrics — applicable not just to Rainbow Six Siege, but to all FPS titles.</p>',
+                skill_1_t: 'Operations & System Building', skill_1_d: '7 years of T1 management experience leading APAC FPS team builds. Expertise in cross-border roster management, establishing grassroots scouting systems, global coaching resource integration, and promoting amateur players directly to Pro League starting rosters. Includes a dedicated player psychological support program.',
+                skill_2_t: 'Data Models & Sports Science', skill_2_d: 'Pioneered a custom esports data analysis system applicable across all FPS titles, not limited to R6. Transforms map pool bans/picks and each player\'s attack/defense role pools into objective digital evaluations, supporting coaching decisions with rigorous logic rather than intuition.',
+                skill_3_t: 'Risk Control & Discipline', skill_3_d: 'Advocates a character-first culture over pure skill. Established standardized intervention mechanisms for player remarks and political sensitivities, alongside 1-on-1 psychological counseling to maintain performance floors under high-pressure scenarios and prevent PR crises.',
+                skill_4_t: 'Commercial Resource Integration', skill_4_d: 'Independently negotiated and secured hardware and financial sponsorships from top-tier brands including ASUS ROG, SteelSeries, HyperX, GIGABYTE, and 2000Fun. Maintains active commercial channels across Greater China (Hong Kong & Taiwan).',
+                skill_5_t: 'Network & Industry Resources', skill_5_d: 'Deep connections across APEX and R6 APAC active players, rising talents, and world champion-tier coaches. Combined with a systems engineering background, adept at building borderless remote collaboration ecosystems powered by AI tools.',
+                exp_1_role: 'Club Reconstruction Consultant', exp_1_co: 'Freelance / Consultant',
+                exp_1_desc: '<ul><li>Assisted the club in clarifying direction and resolving resource imbalances, rebuilding the full training system and team structure, achieving <strong>Top 4 at the GVC Vanguard Tournament</strong> with strategic advisory throughout.</li><li>Deeply familiar with the CN R6 competitive landscape and stakeholder alignment; successfully recruited premium talents from HK, Taiwan, and Macau, breaking regional recruitment barriers.</li><li>Maintained close ties with SEA tournament organizers and clubs, possessing deep knowledge of competition rules and operational workflows to provide cross-region event support.</li></ul>',
+                exp_2_role: 'Team Manager & Business Development (Concurrent)', exp_2_co: 'Latent Dragon Esports (潜龙电竞)',
+                exp_2_desc: '<div class="sub-section"><div class="sub-section-title">Performance & Tournament Execution</div><ul><li>Following the restoration of professional status in the HK region, directed all training resource allocation to ensure the team <strong>consistently retained Pro League spots</strong> throughout the tenure.</li><li>Coordinated and led the team at the <strong>2020 MSI Wuhan R6 Exchange Tournament</strong> and Taiwan community offline events, managing cross-region travel logistics, event coordination, and on-site incident handling.</li></ul></div><div class="sub-section"><div class="sub-section-title">Talent Development & Scouting</div><ul><li>Established a grassroots scouting system; excelled at <strong>identifying unknown amateur players</strong> and promoting them directly to Pro League starting rosters.</li><li>Maintained active relationships across the entire APAC player pool, enabling rapid talent mobilization; extensive experience managing cross-national communication barriers.</li><li>Integrated top APAC coaching resources, successfully onboarding <strong>world champion-tier international coaches</strong> and eliminating language barriers between coaching staff and local players through multilingual capabilities.</li></ul></div><div class="sub-section"><div class="sub-section-title">Risk Management & Team Discipline</div><ul><li>Advocates a <strong>character-first philosophy</strong>, drafting player conduct guidelines with clearly defined role boundaries; does not interfere with in-game decisions or practice micromanagement.</li><li>Established early-warning and mandatory intervention mechanisms for high-frequency PR risks (inappropriate remarks, politically sensitive topics), ensuring compliant operations and crisis avoidance.</li><li>Implemented 1-on-1 psychological counseling workflows to address internal friction and emotional burnout from high-pressure competition environments.</li></ul></div><div class="sub-section"><div class="sub-section-title">Brand & Commercial Development</div><ul><li>Spearheaded APAC commercial sponsorship development, successfully securing hardware and financial sponsorships from <strong>ASUS ROG, SteelSeries, HyperX, GIGABYTE, and 2000Fun</strong>.</li><li>Managed sponsor relationship management, rights planning, and long-term partnership maintenance.</li></ul></div>',
+                exp_3_role: 'System Engineer', exp_3_co: 'Yazaki',
+                exp_3_desc: '<div class="sub-section"><div class="sub-section-title">Data Security Infrastructure</div><ul><li>Led the <strong>network security infrastructure project</strong> for the Hong Kong branch, responsible for data stability and protection. This experience directly translates to esports, ensuring the absolute security of confidential tactical models and scrim recordings.</li></ul></div><div class="sub-section"><div class="sub-section-title">AI Commercialization</div><ul><li>Drove the practical deployment of AI projects on the commercial side and led internal AI education initiatives. This capability is directly applicable to developing the team\'s <strong>"data-driven training ecosystem"</strong> and player performance prediction models.</li></ul></div><div class="sub-section"><div class="sub-section-title">Cross-Region Remote Work Infrastructure</div><ul><li>Built a borderless remote work ecosystem for the HK branch, leveraging AI integration tools to ensure seamless information sync and communication.</li><li>This capability directly addresses the remote collaboration pain points of professional teams during international tournaments (e.g., Worlds, MSI), ensuring <strong>"zero-latency, high-transparency"</strong> communication between coaches, players, and management across different physical locations.</li></ul></div>',
+                roster_desc: 'The following players were directly managed, developed, or assisted by me in achieving professional milestones, spanning Southeast Asia, Mainland China, and Hong Kong regions.',
+                badge_active: 'Active',
+                roster_joegor: 'Has represented Southeast Asia at MAJOR international tournaments on multiple occasions — one of the most recognized professional players in the APAC region.',
+                roster_cn_team: 'Mainland China Club', roster_cn: 'Active professional players in the CN circuit, recruited and integrated into the domestic scene through my cross-region network.',
+                roster_ksan: 'Assembled from scratch under my management — <strong>secured a Pro League spot in their very first season</strong>, a defining case study in zero-to-professional team building.',
+                sys_desc: 'Showcasing my independently developed, team-exclusive data analysis system. <strong style="color:var(--text-main)">Applicable across all game titles, not limited to Rainbow Six Siege.</strong> Translates massive scrim data into intuitive charts for map strategies, agent pool analysis, and competitor strength evaluations. The system is continuously evolving and independently operated; per-team data calibration is adjusted based on actual conditions.',
+                sys_g1: 'Comprehensive Dashboard 01', sys_g2: 'Player Performance Eval 02', sys_g3: 'Map BP Analysis 03', sys_g4: 'Offense/Defense Tactics 04', sys_g5: 'Competitor Matrix 05', sys_g6: 'Scrim Trend Tracking 06',
+                footer_title: 'READY TO BUILD A CHAMPIONSHIP TEAM?', footer_sub: 'Contact me now — let\'s reshape the esports landscape with data and science.'
+            },
+            'ja': {
+                nav_about: 'プロフィール', nav_skills: 'スキル', nav_exp: '職歴', nav_roster: '担当選手', nav_sys: 'システム', nav_pdf: 'CV ダウンロード',
+                hero_aka: 'Teddy | 太初', hero_sub: 'eスポーツマネージャー & データストラテジスト',
+                hero_quote: '「健全なゲームエコシステムを維持し、悪質行為を排除。<br>アジアのFPSシーンを牽引し、世界で戦えるトップチームを創り上げる。」',
+                btn_contact: '連絡する', btn_system: '分析モデルを見る',
+                title_about: 'プロフィール', title_skills: 'コアスキル', title_exp: '職歴', title_roster: '担当選手', title_sys: 'システムモデル', title_snapshot: '基本情報',
+                snap_lbl_name: '本名', snap_lbl_age: '年齢', snap_lbl_base: '所在地', snap_lbl_target: '希望職種', snap_lbl_edu: '学歴', snap_lbl_lang: '言語能力',
+                snap_base: '香港在住 / 海外駐在可能（中国本土居留証申請資格あり）',
+                snap_target: 'チームマネージャー（目標：BLG等のトップクラブ）',
+                snap_edu: 'コンピュータサイエンス学士<br>ウロンゴン大学 (UOW)、オーストラリア',
+                snap_lang: '英語（流暢）/ 北京語（流暢）/ 広東語（母語）/ 四川語（流暢）/ 日本語（JLPT N3）',
+                about_content: '<p>業界内では、コーチ、クラブ創設者、選手のいずれからも、チームの<strong>「コア戦略マネージャー」</strong>として認識されています。私は従来の管理者ではなく、コンピュータサイエンスの背景を活かし、チームの課題を的確に特定し、革新的で体系的な改善策を導入することを得意としています。</p><p>私は常に<strong>フルタイムの二刀流</strong>で活動してきました——システムエンジニアとチームマネージャーを同時に担当することで、チームへの意思決定が利益や外部環境に左右されることなく、常にチームの最善の利益を最優先にしています。</p><p>プロチームのあらゆるポジションの役割を熟知しており、私の最大の強みは単なるチーム運営ではなく、<strong>才能の育成と人材管理</strong>にあります。T1チームの管理で7年の経験があり、APAC FPSプロジェクトの立ち上げを主導し、プロリーグの枠を長期的に確保してきました。</p><p>また、<strong>数理論理学と意思決定モデル</strong>をトレーニングシステムに深く統合した業界のパイオニアでもあります。独自開発したデータ分析システムを通じて、抽象的な経験を客観的な評価基準に変換し、トレーニングのデジタル化と科学化を実現——このシステムはR6に限らず、すべてのFPSタイトルに適用可能です。</p>',
+                skill_1_t: 'チーム運営とシステム構築', skill_1_d: '7年間のT1管理経験。多国籍メンバーの調整、基礎的なスカウトシステムの確立、グローバルコーチリソースの統合、アマチュア選手のプロリーグスターターへの直接昇格を得意とします。選手向け心理サポートプログラムも設置し、チームの長期安定運営を保障。',
+                skill_2_t: 'データモデルとスポーツ科学', skill_2_d: '業界初のチーム専用データ分析システムを開発。R6に限らず全FPSタイトルに適用可能。マップBP、各選手の攻防ロールプールを客観的なデジタル評価に変換し、直感ではなく厳密な論理でコーチ陣の意思決定をサポートします。',
+                skill_3_t: 'リスク管理とコンプライアンス', skill_3_d: '能力よりも品格を優先するチーム文化を提唱し、マイクロマネジメントは行いません。不適切な発言や政治的リスクに対する標準化された介入メカニズムを確立し、1対1の心理カウンセリングで高圧的な環境下でのパフォーマンスを保障、PR危機を回避します。',
+                skill_4_t: '商業リソース統合', skill_4_d: 'ASUS ROG、SteelSeries、HyperX、GIGABYTE、2000Funなどのトップブランドから機材および資金スポンサーシップを独自に獲得。大中華圏（香港・台湾）の商業チャネルを保有し、長期的なパートナーシップを維持。',
+                skill_5_t: 'ネットワークと業界リソース', skill_5_d: 'APEX・R6 APACの現役選手、新星、世界チャンピオン級コーチとの深いコネクションを保有。システムエンジニアの背景と組み合わせ、AIツールを活用した国境を越えたリモートコラボレーション環境の構築を得意とします。',
+                exp_1_role: 'クラブ再建コンサルタント', exp_1_co: 'フリーランス / コンサルタント',
+                exp_1_desc: '<ul><li>クラブの方向性を明確化し、リソース不均衡を解消。トレーニングシステムとチーム構造を再建し、GVCトーナメントで<strong>トップ4入り</strong>を達成、全過程で戦略アドバイスを提供。</li><li>中国国内のR6競争環境とステークホルダー調整に精通し、香港・台湾・マカオから優秀な選手を獲得、地域採用の壁を突破。</li><li>東南アジアの大会主催者や他クラブと緊密な関係を維持し、ルールと運営を深く理解、クロスリージョンイベントサポートを提供。</li></ul>',
+                exp_2_role: 'チームマネージャー & BD（兼任）', exp_2_co: 'Latent Dragon Esports（潜龍電競）',
+                exp_2_desc: '<div class="sub-section"><div class="sub-section-title">成績保障と大会運営</div><ul><li>香港リージョンのプロ資格回復後、全トレーニングリソースを最適化し、<strong>プロリーグ枠を継続的に確保</strong>、在任中は常にシートを維持。</li><li><strong>2020 MSI武漢R6交流大会</strong>および台湾コミュニティオフライン大会に帯同、クロスリージョン遠征ロジスティクス・イベント調整・現場対応を担当。</li></ul></div><div class="sub-section"><div class="sub-section-title">人材育成とスカウティング</div><ul><li>基礎スカウトシステムを確立し、<strong>無名アマチュア選手を発掘</strong>してプロリーグスターターに直接昇格させることを得意とします。</li><li>APAC全域の選手と継続的な関係を維持し、迅速な人材調達が可能；多国籍コミュニケーション障壁の処理経験が豊富。</li><li>APACの優良コーチリソースを統合し、<strong>世界チャンピオン級の国際コーチ</strong>を招聘、多言語能力で教練と地元選手間の言語の壁を解消。</li></ul></div><div class="sub-section"><div class="sub-section-title">リスク管理とチーム規律</div><ul><li><strong>品格優先</strong>のチーム文化を提唱し、選手行動規範を策定。ゲーム内決定への干渉やマイクロマネジメントは行いません。</li><li>不適切な発言・政治的リスクに対する早期警告・強制介入メカニズムを構築し、コンプライアンス運営とPR危機回避を確保。</li><li>1対1心理カウンセリングフローを実施し、内部摩擦と高圧競技環境による感情的消耗に対処。</li></ul></div><div class="sub-section"><div class="sub-section-title">ブランド・商業開発</div><ul><li>APAC商業スポンサーシップを主導し、<strong>ASUS ROG、SteelSeries、HyperX、GIGABYTE、2000Fun</strong>から機材・資金スポンサーシップを獲得。</li><li>スポンサー権益の企画・実施、長期パートナーシップの維持を担当。</li></ul></div>',
+                exp_3_role: 'システムエンジニア', exp_3_co: 'Yazaki（矢崎総業）',
+                exp_3_desc: '<div class="sub-section"><div class="sub-section-title">データセキュリティ基盤</div><ul><li>香港支社の<strong>ネットワークセキュリティ基盤プロジェクト</strong>を主導。この経験はeスポーツに直接転用でき、機密性の高い戦術モデルやスクリム録画の絶対的な安全性を確保します。</li></ul></div><div class="sub-section"><div class="sub-section-title">AI商業化</div><ul><li>AIプロジェクトの商業実装を推進し、社内AI教育を主導。この能力はチームの<strong>「データ駆動型トレーニングシステム」</strong>と選手パフォーマンス予測モデル開発に直接応用可能。</li></ul></div><div class="sub-section"><div class="sub-section-title">クロスリージョン・リモートワーク基盤</div><ul><li>香港支社向けに国境を越えたリモートワーク環境を構築、AI統合ツールで情報同期とシームレスなコミュニケーションを実現。</li><li>この能力は国際大会（Worlds、MSI等）期間中のプロチームのリモートコラボレーション課題を完全に解決し、コーチ・選手・経営陣間の<strong>「遅延ゼロ・高透明性」</strong>コミュニケーションを確保します。</li></ul></div>',
+                roster_desc: '以下は私が直接育成・管理、またはプロとしての実績達成を支援した選手です。東南アジア、中国本土、香港リージョンにわたります。',
+                badge_active: '現役',
+                roster_joegor: 'MAJOR国際大会に東南アジア代表として複数回出場——APACで最も認知度の高いプロ選手の一人。',
+                roster_cn_team: '中国本土クラブ', roster_cn: '中国本土の現役プロ選手。私のクロスリージョンネットワークを通じて国内シーンに招聘・統合。',
+                roster_ksan: '私が一から組んだチームで、<strong>初シーズンでプロリーグ枠を獲得</strong>——ゼロからプロへの典型的な成功事例。',
+                sys_desc: '独自に開発したチーム専用データ分析システムを紹介します。<strong style="color:var(--text-main)">R6に限らず、すべてのゲームタイトルに適用可能。</strong>膨大なスクリムデータを直感的なチャートに変換し、マップ戦略、キャラクタープール分析、競合他社の戦力評価を実施。システムは継続的に進化中で独立運営、各チームのデータ調整は実際の状況に応じて行います。',
+                sys_g1: '総合ダッシュボード 01', sys_g2: '選手パフォーマンス評価 02', sys_g3: 'マップ BP 分析 03', sys_g4: '攻防戦術シミュレーション 04', sys_g5: '競合戦力マトリクス 05', sys_g6: 'スクリムトレンド追跡 06',
+                footer_title: 'チャンピオンチームを作る準備はできましたか？', footer_sub: 'データと科学でeスポーツの状況を再構築しましょう。今すぐご連絡ください。'
+            }
+        };
+
+        async function downloadPageAsPDF() {
+            const btn = document.getElementById('pdfBtn');
+            const progress = document.getElementById('pdf-progress');
+            btn.classList.add('loading');
+            btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> 生成中...`;
+            progress.style.display = 'block';
+            if (!document.getElementById('spin-style')) {
+                const s = document.createElement('style');
+                s.id = 'spin-style';
+                s.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
+                document.head.appendChild(s);
+            }
+            const navbar = document.querySelector('.navbar');
+            const lightbox = document.getElementById('lightbox');
+            const heroSection = document.getElementById('hero');
+            const originalNavDisplay = navbar.style.display;
+            const originalHeroHeight = heroSection.style.height;
+            const originalHeroMinHeight = heroSection.style.minHeight;
+            navbar.style.display = 'none';
+            lightbox.style.display = 'none';
+            const heroNaturalHeight = heroSection.scrollHeight;
+            heroSection.style.height = heroNaturalHeight + 'px';
+            heroSection.style.minHeight = heroNaturalHeight + 'px';
+            window.scrollTo(0, 0);
+            await new Promise(r => setTimeout(r, 300));
+            try {
+                const { jsPDF } = window.jspdf;
+                const totalWidth = document.documentElement.scrollWidth;
+                const totalHeight = document.documentElement.scrollHeight;
+                const canvas = await html2canvas(document.body, {
+                    scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#0a0a0a',
+                    scrollX: 0, scrollY: 0, x: 0, y: 0,
+                    width: totalWidth, height: totalHeight,
+                    windowWidth: totalWidth, windowHeight: totalHeight,
+                    logging: false, imageTimeout: 15000, removeContainer: true
+                });
+                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+                const imgWidthPx = canvas.width;
+                const imgHeightPx = canvas.height;
+                const pdfWidthMm = 210;
+                const pdfHeightMm = (imgHeightPx * pdfWidthMm) / imgWidthPx;
+                const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [pdfWidthMm, pdfHeightMm] });
+                pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidthMm, pdfHeightMm);
+                pdf.save('ThisisCho_Resume.pdf');
+            } catch (err) {
+                console.error('PDF generation failed:', err);
+                alert('PDF 生成失敗，請稍後再試。');
+            } finally {
+                navbar.style.display = originalNavDisplay;
+                heroSection.style.height = originalHeroHeight;
+                heroSection.style.minHeight = originalHeroMinHeight;
+                progress.style.display = 'none';
+                btn.classList.remove('loading');
+                btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> 简历下载`;
+            }
+        }
+
+        function changeLang(langCode, btnText) {
+            event.preventDefault();
+            document.getElementById('currentLangBtn').innerHTML = `<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:5px;"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>` + btnText;
+            const elements = document.querySelectorAll('[data-i18n]');
+            elements.forEach(el => {
+                const key = el.getAttribute('data-i18n');
+                if (translations[langCode] && translations[langCode][key]) {
+                    if (el.querySelector('svg')) {
+                        const svgHtml = el.querySelector('svg').outerHTML;
+                        el.innerHTML = svgHtml + ' ' + translations[langCode][key];
+                    } else {
+                        el.innerHTML = translations[langCode][key];
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>
