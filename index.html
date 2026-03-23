@@ -570,11 +570,32 @@
             const heroNaturalHeight = heroSection.scrollHeight;
             heroSection.style.height = heroNaturalHeight + 'px';
             heroSection.style.minHeight = heroNaturalHeight + 'px';
+
+            // Inject temporary PDF override styles to force all text visible
+            const pdfStyle = document.createElement('style');
+            pdfStyle.id = 'pdf-override-style';
+            pdfStyle.textContent = `
+                .hero-content, .hero-content * { opacity: 1 !important; }
+                .hero-title { color: #ffffff !important; text-shadow: none !important; }
+                .hero-title span { color: #00f0ff !important; text-shadow: none !important; }
+                .hero-aka { color: #cccccc !important; opacity: 1 !important; }
+                .hero-subtitle { color: #ffffff !important; }
+                .hero-quote p { color: #ffffff !important; }
+                .btn-primary { background: #00f0ff !important; color: #000000 !important; }
+                .btn-secondary { color: #ffffff !important; border-color: #ffffff !important; }
+                body, body * { animation: none !important; transition: none !important; }
+                .section-title, .about-text p, .skill-card, .skill-title, .skill-desc,
+                .timeline-title, .timeline-company, .timeline-content, .timeline-content li,
+                .roster-card, .roster-name, .roster-desc, .snapshot-value, .snapshot-label,
+                .snapshot-title, .footer-title, .footer-subtitle, .contact-value, .contact-label,
+                .copyright, .gallery-caption, .sub-section-title { opacity: 1 !important; }
+            `;
+            document.head.appendChild(pdfStyle);
+
             window.scrollTo(0, 0);
-            await new Promise(r => setTimeout(r, 300));
+            await new Promise(r => setTimeout(r, 500));
             try {
                 const { jsPDF } = window.jspdf;
-                // Force desktop width for PDF so hero title renders fully
                 const pdfWindowWidth = 1440;
                 const totalHeight = document.documentElement.scrollHeight;
                 const canvas = await html2canvas(document.body, {
@@ -591,11 +612,31 @@
                 const pdfHeightMm = (imgHeightPx * pdfWidthMm) / imgWidthPx;
                 const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [pdfWidthMm, pdfHeightMm] });
                 pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidthMm, pdfHeightMm);
+
+                // Add clickable link overlays on the PDF
+                const scaleX = pdfWidthMm / pdfWindowWidth;
+                const scaleY = pdfHeightMm / totalHeight;
+                const links = document.querySelectorAll('a[href^="http"]');
+                links.forEach(link => {
+                    const rect = link.getBoundingClientRect();
+                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    const x = rect.left * scaleX;
+                    const y = (rect.top + scrollTop) * scaleY;
+                    const w = rect.width * scaleX;
+                    const h = rect.height * scaleY;
+                    if (w > 0 && h > 0 && y < pdfHeightMm) {
+                        pdf.link(x, y, w, h, { url: link.href });
+                    }
+                });
+
                 pdf.save('ThisisCho_Resume.pdf');
             } catch (err) {
                 console.error('PDF generation failed:', err);
                 alert('PDF 生成失敗，請稍後再試。');
             } finally {
+                // Remove temporary PDF styles
+                const overrideStyle = document.getElementById('pdf-override-style');
+                if (overrideStyle) overrideStyle.remove();
                 navbar.style.display = originalNavDisplay;
                 heroSection.style.height = originalHeroHeight;
                 heroSection.style.minHeight = originalHeroMinHeight;
