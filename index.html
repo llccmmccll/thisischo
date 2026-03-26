@@ -550,99 +550,127 @@
         async function downloadPageAsPDF() {
             const btn = document.getElementById('pdfBtn');
             const progress = document.getElementById('pdf-progress');
+
+            // Restore button helper
+            const restoreBtn = () => {
+                btn.classList.remove('loading');
+                btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> 简历下载`;
+                if (progress) progress.style.display = 'none';
+            };
+
+            // Check libraries loaded
+            if (typeof html2canvas === 'undefined' || typeof window.jspdf === 'undefined') {
+                alert('PDF 库加载中，请稍候 3 秒后再试。');
+                return;
+            }
+
             btn.classList.add('loading');
             btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="animation:spin 1s linear infinite"><path d="M21 12a9 9 0 1 1-6.219-8.56"/></svg> 生成中...`;
-            progress.style.display = 'block';
+            if (progress) progress.style.display = 'block';
+
             if (!document.getElementById('spin-style')) {
                 const s = document.createElement('style');
                 s.id = 'spin-style';
                 s.textContent = '@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }';
                 document.head.appendChild(s);
             }
+
             const navbar = document.querySelector('.navbar');
             const lightbox = document.getElementById('lightbox');
             const heroSection = document.getElementById('hero');
-            const originalNavDisplay = navbar.style.display;
-            const originalHeroHeight = heroSection.style.height;
-            const originalHeroMinHeight = heroSection.style.minHeight;
-            navbar.style.display = 'none';
-            lightbox.style.display = 'none';
-            const heroNaturalHeight = heroSection.scrollHeight;
-            heroSection.style.height = heroNaturalHeight + 'px';
-            heroSection.style.minHeight = heroNaturalHeight + 'px';
+            const originalNavDisplay = navbar ? navbar.style.display : '';
+            const originalHeroHeight = heroSection ? heroSection.style.height : '';
+            const originalHeroMinHeight = heroSection ? heroSection.style.minHeight : '';
 
-            // Inject temporary PDF override styles to force all text visible
+            if (navbar) navbar.style.display = 'none';
+            if (lightbox) lightbox.style.display = 'none';
+            if (heroSection) {
+                const heroNaturalHeight = heroSection.scrollHeight;
+                heroSection.style.height = heroNaturalHeight + 'px';
+                heroSection.style.minHeight = heroNaturalHeight + 'px';
+            }
+
+            // Force all text and elements fully visible
             const pdfStyle = document.createElement('style');
             pdfStyle.id = 'pdf-override-style';
             pdfStyle.textContent = `
-                .hero-content, .hero-content * { opacity: 1 !important; }
-                .hero-title { color: #ffffff !important; text-shadow: none !important; }
-                .hero-title span { color: #00f0ff !important; text-shadow: none !important; }
-                .hero-aka { color: #cccccc !important; opacity: 1 !important; }
-                .hero-subtitle { color: #ffffff !important; }
-                .hero-quote p { color: #ffffff !important; }
+                * { animation: none !important; transition: none !important; }
+                body, body * { opacity: 1 !important; visibility: visible !important; }
+                .hero-title { color: #ffffff !important; text-shadow: 0 0 10px rgba(255,255,255,0.5) !important; -webkit-text-fill-color: #ffffff !important; }
+                .hero-title span { color: #00f0ff !important; -webkit-text-fill-color: #00f0ff !important; }
+                .hero-aka, .hero-subtitle, .hero-quote p { color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; }
                 .btn-primary { background: #00f0ff !important; color: #000000 !important; }
                 .btn-secondary { color: #ffffff !important; border-color: #ffffff !important; }
-                body, body * { animation: none !important; transition: none !important; }
-                .section-title, .about-text p, .skill-card, .skill-title, .skill-desc,
-                .timeline-title, .timeline-company, .timeline-content, .timeline-content li,
-                .roster-card, .roster-name, .roster-desc, .snapshot-value, .snapshot-label,
-                .snapshot-title, .footer-title, .footer-subtitle, .contact-value, .contact-label,
-                .copyright, .gallery-caption, .sub-section-title { opacity: 1 !important; }
             `;
             document.head.appendChild(pdfStyle);
 
             window.scrollTo(0, 0);
-            await new Promise(r => setTimeout(r, 500));
+            // Wait for styles to apply
+            await new Promise(r => setTimeout(r, 800));
+
             try {
                 const { jsPDF } = window.jspdf;
-                const pdfWindowWidth = 1440;
                 const totalHeight = document.documentElement.scrollHeight;
+                const pageWidth = document.documentElement.scrollWidth;
+
                 const canvas = await html2canvas(document.body, {
-                    scale: 2, useCORS: true, allowTaint: true, backgroundColor: '#0a0a0a',
-                    scrollX: 0, scrollY: 0, x: 0, y: 0,
-                    width: pdfWindowWidth, height: totalHeight,
-                    windowWidth: pdfWindowWidth, windowHeight: totalHeight,
-                    logging: false, imageTimeout: 15000, removeContainer: true
+                    scale: 1.5,
+                    useCORS: true,
+                    allowTaint: true,
+                    backgroundColor: '#0a0a0a',
+                    scrollX: -window.scrollX,
+                    scrollY: -window.scrollY,
+                    width: pageWidth,
+                    height: totalHeight,
+                    windowWidth: pageWidth,
+                    windowHeight: totalHeight,
+                    logging: false,
+                    imageTimeout: 0,
+                    removeContainer: true,
+                    foreignObjectRendering: false
                 });
-                const imgData = canvas.toDataURL('image/jpeg', 0.95);
+
+                const imgData = canvas.toDataURL('image/jpeg', 0.92);
                 const imgWidthPx = canvas.width;
                 const imgHeightPx = canvas.height;
                 const pdfWidthMm = 210;
                 const pdfHeightMm = (imgHeightPx * pdfWidthMm) / imgWidthPx;
-                const pdf = new jsPDF({ orientation: 'portrait', unit: 'mm', format: [pdfWidthMm, pdfHeightMm] });
+
+                const pdf = new jsPDF({
+                    orientation: 'portrait',
+                    unit: 'mm',
+                    format: [pdfWidthMm, pdfHeightMm]
+                });
                 pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidthMm, pdfHeightMm);
 
-                // Add clickable link overlays on the PDF
-                const scaleX = pdfWidthMm / pdfWindowWidth;
-                const scaleY = pdfHeightMm / totalHeight;
-                const links = document.querySelectorAll('a[href^="http"]');
-                links.forEach(link => {
+                // Add clickable link overlays
+                const scaleX = pdfWidthMm / imgWidthPx * 1.5;
+                const scaleY = pdfHeightMm / imgHeightPx * 1.5;
+                document.querySelectorAll('a[href^="http"]').forEach(link => {
                     const rect = link.getBoundingClientRect();
                     const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
                     const x = rect.left * scaleX;
                     const y = (rect.top + scrollTop) * scaleY;
-                    const w = rect.width * scaleX;
-                    const h = rect.height * scaleY;
-                    if (w > 0 && h > 0 && y < pdfHeightMm) {
-                        pdf.link(x, y, w, h, { url: link.href });
+                    const w = Math.max(rect.width * scaleX, 5);
+                    const h = Math.max(rect.height * scaleY, 5);
+                    if (y < pdfHeightMm) {
+                        try { pdf.link(x, y, w, h, { url: link.href }); } catch(e) {}
                     }
                 });
 
                 pdf.save('ThisisCho_Resume.pdf');
             } catch (err) {
                 console.error('PDF generation failed:', err);
-                alert('PDF 生成失敗，請稍後再試。');
+                alert('PDF 生成失败: ' + err.message);
             } finally {
-                // Remove temporary PDF styles
                 const overrideStyle = document.getElementById('pdf-override-style');
                 if (overrideStyle) overrideStyle.remove();
-                navbar.style.display = originalNavDisplay;
-                heroSection.style.height = originalHeroHeight;
-                heroSection.style.minHeight = originalHeroMinHeight;
-                progress.style.display = 'none';
-                btn.classList.remove('loading');
-                btn.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M7 10l5 5 5-5M12 15V3"/></svg> 简历下载`;
+                if (navbar) navbar.style.display = originalNavDisplay;
+                if (heroSection) {
+                    heroSection.style.height = originalHeroHeight;
+                    heroSection.style.minHeight = originalHeroMinHeight;
+                }
+                restoreBtn();
             }
         }
 
